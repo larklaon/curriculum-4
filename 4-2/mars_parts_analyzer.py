@@ -63,7 +63,7 @@ def main():
         # 6. 평균값 출력
         print('부품별 평균 strength 값:')
         for i, avg in enumerate(averages):
-            print(f'  {parts_names[i]}: {avg:.2f}')
+            print(f'  {parts_names[i]}: {avg:.3f}')
         print()
 
         # 7. 평균 strength가 50 미만인 부품의 인덱스 찾기
@@ -83,7 +83,7 @@ def main():
             # 각 부품명과 평균 값 한 줄씩 기록
             # zip() 함수는 두 리스트/배열을 한 쌍씩 묶어줍
             for part, avg in zip(filtered_parts, filtered_avgs):
-                f.write(f'{part},{avg:.2f}\n')
+                f.write(f'{part},{avg:.3f}\n')
 
         print(f'{output_file}에 저장 완료!')
 
