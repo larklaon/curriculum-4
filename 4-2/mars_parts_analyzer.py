@@ -14,6 +14,7 @@ def read_csv(filename):
     # skip_header=1: 첫 줄(헤더)을 건너뜀
     # dtype: 구조화 배열로 각 컬럼 타입 지정 (문자열 최대 50자, float64)
     # encoding='utf-8-sig': BOM(바이트순서표시자) 처리를 위한 인코딩 설정
+    # np.genfromtxt()는 Python의 NumPy 라이브러리에서 제공하는 함수로, 텍스트 파일(주로 CSV 파일)을 읽어서 NumPy 배열로 변환해주는 함수.
     return np.genfromtxt(filename, delimiter=',', skip_header=1,
                        dtype=[('parts', 'U50'), ('strength', 'f8')],
                        encoding='utf-8-sig')
@@ -56,6 +57,7 @@ def main():
 
         # 5. 각 부품별 strength의 평균을 계산 (열 단위)
         # axis=0 => 행들을 평균 내어 각 열별 평균을 구함 (즉 부품별 평균)
+        # mean 메서드는 NumPy 배열 내의 원소들의 산술 평균(Arithmetic Mean), 즉 모든 값을 더한 후 값의 개수로 나눈 결과를 계산하는 함수.
         averages = np.mean(all_strengths, axis=0)
 
         # 6. 평균값 출력
@@ -79,6 +81,7 @@ def main():
             f.write('part,average_strength\n')
             
             # 각 부품명과 평균 값 한 줄씩 기록
+            # zip() 함수는 두 리스트/배열을 한 쌍씩 묶어줍
             for part, avg in zip(filtered_parts, filtered_avgs):
                 f.write(f'{part},{avg:.2f}\n')
 
