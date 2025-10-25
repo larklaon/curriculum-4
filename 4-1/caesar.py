@@ -1,73 +1,70 @@
-def caesar_cipher_decode(target_text):
-    """입력된 텍스트를 시저 암호(전수 방식)로 해독하는 함수."""
-    results = []
+# 목적:
+# - 'password.txt'에 저장된 시저 암호(Caesar cipher) 텍스트를 26가지 모든 평문 후보로 디코딩해 봅니다.
+# - 콘솔에 [01] ~ [26] 형태로 모든 후보를 보여주고, 사용자가 정답으로 보이는 번호(1~26)를 고르면
+#   그 평문을 'result.txt'에 저장합니다.
+#
+def decode_caesar(text):
+    """
+    주어진 텍스트를 시저 암호 방식으로 0~25칸까지 모두 '왼쪽으로' 이동(복원)해 본 결과를
+    리스트로 반환하고, 각 결과를 콘솔에 [01]~[26] 형태로 출력합니다.
 
-    # 0~25까지 모든 시프트 값을 적용하며 가능한 모든 해독 텍스트를 시도
+    매커니즘:
+    - 알파벳 대문자: 'A'(65)~'Z'(90) 범위만 회전
+    - 알파벳 소문자: 'a'(97)~'z'(122) 범위만 회전
+    - 그 외 문자(공백, 숫자, 기호 등)는 그대로 둠
+    - (ord: 문자→유니코드 코드포인트, chr: 코드포인트→문자)
+    - (x - 기준 - shift) % 26 + 기준  패턴으로 알파벳을 회전 복원
+    """
+    out = []  # 모든 평문 후보를 순서대로 모을 리스트
+
+    # shift는 0~25까지 총 26가지 경우의 수를 의미합니다.
+    # 여기서의 shift는 '암호화 때 오른쪽으로 밀어 넣은 칸 수'라고 보면 됩니다.
+    # 복원은 반대로 왼쪽으로 shift만큼 당기는 것이므로 -shift를 적용합니다.
     for shift in range(26):
-        decoded_text = ''
-        for ch in target_text:
-            # 대문자인 경우 (A~Z / ASCII 코드 65~90)
+        dec = ''  # 현재 shift로 복원한 결과를 누적할 문자열
+
+        # 입력 텍스트의 모든 문자를 하나씩 순회합니다.
+        for ch in text:
+            # 1) 대문자 범위라면 대문자끼리만 회전(복원)
             if 'A' <= ch <= 'Z':
-                # ord() : 문자 → ASCII 코드(정수)
-                # chr() : ASCII 코드(정수) → 문자
-                # 예: 'B'(66)에서 shift=1이면 (66-65-1) % 26 + 65 = 65 → 'A'
-                decoded_text += chr((ord(ch) - ord('A') - shift) % 26 + ord('A'))
+                # 'A'를 0으로 맞춘 뒤 shift만큼 왼쪽으로 이동(복원), 26으로 나머지 연산(회전),
+                # 다시 'A' 기준으로 되돌립니다.
+                dec += chr((ord(ch) - ord('A') - shift) % 26 + ord('A'))
 
-            # 소문자인 경우 (a~z / ASCII 코드 97~122)
+            # 2) 소문자 범위라면 소문자끼리만 회전(복원)
             elif 'a' <= ch <= 'z':
-                decoded_text += chr((ord(ch) - ord('a') - shift) % 26 + ord('a'))
+                dec += chr((ord(ch) - ord('a') - shift) % 26 + ord('a'))
 
-            # 알파벳이 아닌 문자(공백, 숫자, 기호 등)는 그대로 유지
+            # 3) 그 외 문자는 변경하지 않습니다.
             else:
-                decoded_text += ch
+                dec += ch
 
-        # 각 시프트 결과를 출력해서 사람이 직접 확인 가능하도록 함
-        print(f'[{shift:02d}] {decoded_text}')
-        results.append(decoded_text)
+        # 화면에는 사람 친화적으로 1~26번으로 표시하기 위해 +1을 해 줍니다.
+        # :02d는 정수를 2자리로 0을 앞에 채워 출력하라는 뜻입니다(예: 1 → 01).
+        print(f'[{shift + 1:02d}] {dec}')
 
-    return results
+        # 현재 shift로 얻은 평문 후보를 리스트에 저장합니다.
+        out.append(dec)
 
-
-def main():
-    """시저 암호 해독 프로그램의 메인 함수."""
-    # 1) 암호문 파일(password.txt)을 읽기 시도
-    try:
-        with open('password.txt', 'r', encoding='utf-8') as file:
-            cipher_text = file.read()
-    except FileNotFoundError:
-        # 파일이 존재하지 않으면 안내 메시지를 출력하고 종료
-        print('오류: password.txt 파일을 찾을 수 없습니다.')
-        return
-    except OSError:
-        # 파일 접근 중 일반 입출력 오류 발생 시
-        print('오류: 파일을 읽는 중 문제가 발생했습니다.')
-        return
-
-    # 2) 모든 시프트(0~25)에 대해 복호화 수행
-    all_results = caesar_cipher_decode(cipher_text)
-
-    # 3) 사용자가 “정답으로 보이는 시프트 값”을 입력
-    try:
-        k = int(input('정답으로 보이는 자리수를 입력하세요 (0~25): '))
-        # 입력 값이 0~25 범위를 벗어나면 오류 처리
-        if not 0 <= k <= 25:
-            print('오류: 0에서 25 사이의 값을 입력해야 합니다.')
-            return
-    except ValueError:
-        # 정수가 아닌 값을 입력했을 경우
-        print('오류: 숫자를 입력해야 합니다.')
-        return
-
-    # 4) 해독된 결과를 result.txt 파일에 저장
-    try:
-        with open('result.txt', 'w', encoding='utf-8') as file:
-            file.write(all_results[k])
-        print('result.txt 저장 완료')
-    except OSError:
-        # 파일 쓰기 중 오류 발생 시
-        print('오류: 파일을 저장하는 중 문제가 발생했습니다.')
+    # 길이 26의 리스트(모든 평문 후보) 반환
+    return out
 
 
-# 이 파일이 직접 실행될 때만 main()을 호출
-if __name__ == '__main__':
-    main()
+# 1) 암호문 읽기: 작업 폴더에 있는 'password.txt' 파일에서 전체 내용을 읽어옵니다.
+# 인코딩은 UTF-8로 가정합니다.
+with open('password.txt', 'r', encoding='utf-8') as f:
+    cipher = f.read()
+
+# 2) 모든 평문 후보를 생성하고, 콘솔에 1~26번으로 출력합니다.
+cands = decode_caesar(cipher)
+
+# 3) 사용자에게 정답으로 보이는 번호를 입력받습니다.
+# 안내 문구에 (1~26)을 명시하여 1부터 시작함을 분명히 합니다.
+idx = int(input('정답으로 보이는 자리수를 입력하세요 (1~26): '))
+
+# 4) 리스트 인덱스는 0부터 시작하므로, 사용자가 입력한 번호에서 1을 뺀 값을 인덱스로 사용합니다.
+with open('result.txt', 'w', encoding='utf-8') as f:
+    f.write(cands[idx - 1])
+
+# 5) 완료 메시지 출력
+print('result.txt 저장 완료')
