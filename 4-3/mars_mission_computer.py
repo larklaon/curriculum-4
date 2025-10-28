@@ -5,6 +5,7 @@ import platform
 import os
 import threading
 import multiprocessing
+import psutil  # 외부 라이브러리
 
 
 class DummySensor:
@@ -62,20 +63,17 @@ class MissionComputer:
             time.sleep(20)
 
     def get_mission_computer_load(self):
+        # psutil.cpu_percent(interval=1)은 1초 측정 후 평균치를 반환합니다.
+        # 20초 주기를 유지하려면 이후 sleep을 19로 설정해 총 ~20초가 되게 합니다.
         while True:
-            load = {}
-            try:
-                load['cpu_usage(%)'] = os.getloadavg()[0] / os.cpu_count() * 100
-            except (AttributeError, OSError):
-                load['cpu_usage(%)'] = 0
-            try:
-                mem_info = os.sysconf('SC_AVPHYS_PAGES') / os.sysconf('SC_PHYS_PAGES') * 100
-                load['memory_usage(%)'] = 100 - mem_info
-            except (AttributeError, ValueError, OSError):
-                load['memory_usage(%)'] = 0
-
+            cpu_pct = psutil.cpu_percent(interval=1)         # 1초 측정
+            mem_pct = psutil.virtual_memory().percent        # 현재 메모리 사용률
+            load = {
+                'cpu_usage(%)': round(cpu_pct, 2),
+                'memory_usage(%)': round(mem_pct, 2)
+            }
             print(json.dumps(load, indent=4))
-            time.sleep(20)
+            time.sleep(19)  # 위의 1초 측정 포함 총 ~20초 주기
 
 
 def run_info():
