@@ -1,10 +1,11 @@
-import random
-import time
 import json
-import platform
-import os
-import threading
 import multiprocessing
+import os
+import platform
+import random
+import threading
+import time
+
 import psutil  # 외부 라이브러리
 
 
@@ -57,55 +58,85 @@ class MissionComputer:
                 'os_version': platform.version(),
                 'cpu_type': platform.processor(),
                 'cpu_core_count': os.cpu_count(),
-                'memory_size(GB)': round(os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') / (1024 ** 3), 2)
+                'memory_size(GB)': round(
+                    os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') / (1024 ** 3), 2
+                )
             }
             print(json.dumps(info, indent=4))
             time.sleep(20)
 
     def get_mission_computer_load(self):
-        # psutil.cpu_percent(interval=1)은 1초 측정 후 평균치를 반환합니다.
-        # 20초 주기를 유지하려면 이후 sleep을 19로 설정해 총 ~20초가 되게 합니다.
         while True:
-            cpu_pct = psutil.cpu_percent(interval=1)         # 1초 측정
-            mem_pct = psutil.virtual_memory().percent        # 현재 메모리 사용률
+            cpu = psutil.cpu_percent(interval=1)
+            mem = psutil.virtual_memory().percent
             load = {
-                'cpu_usage(%)': round(cpu_pct, 2),
-                'memory_usage(%)': round(mem_pct, 2)
+                'cpu_usage(%)': round(cpu, 2),
+                'memory_usage(%)': round(mem, 2)
             }
             print(json.dumps(load, indent=4))
-            time.sleep(19)  # 위의 1초 측정 포함 총 ~20초 주기
+            time.sleep(19)
 
 
-def run_info():
+def run_info(instance):
+    instance.get_mission_computer_info()
+
+
+def run_load(instance):
+    instance.get_mission_computer_load()
+
+
+def run_sensor(instance):
+    instance.get_sensor_data()
+
+
+def run_threads():
     run_computer = MissionComputer()
-    run_computer.get_mission_computer_info()
+
+    t_info = threading.Thread(target=run_computer.get_mission_computer_info)
+    t_load = threading.Thread(target=run_computer.get_mission_computer_load)
+    t_sensor = threading.Thread(target=run_computer.get_sensor_data)
+
+    t_info.start()
+    t_load.start()
+    t_sensor.start()
+
+    t_info.join()
+    t_load.join()
+    t_sensor.join()
 
 
-def run_load():
-    run_computer = MissionComputer()
-    run_computer.get_mission_computer_load()
+def run_processes():
+    run_computer1 = MissionComputer()
+    run_computer2 = MissionComputer()
+    run_computer3 = MissionComputer()
+
+    p_info = multiprocessing.Process(target=run_info, args=(run_computer1,))
+    p_load = multiprocessing.Process(target=run_load, args=(run_computer2,))
+    p_sensor = multiprocessing.Process(target=run_sensor, args=(run_computer3,))
+
+    p_info.start()
+    p_load.start()
+    p_sensor.start()
+
+    p_info.join()
+    p_load.join()
+    p_sensor.join()
 
 
-def run_sensor():
-    run_computer = MissionComputer()
-    run_computer.get_sensor_data()
+def main():
+    print('실행 모드를 선택하세요:')
+    print('1: 멀티 스레드')
+    print('2: 멀티 프로세스')
+    choice = input('선택 (1/2): ').strip()
+
+    if choice == '1':
+        run_threads()
+    elif choice == '2':
+        run_processes()
+    else:
+        print('잘못된 입력입니다. 기본값(멀티 스레드)으로 실행합니다.')
+        run_threads()
 
 
 if __name__ == '__main__':
-    # 멀티 스레드 실행 예시
-    thread1 = threading.Thread(target=MissionComputer().get_mission_computer_info)
-    thread2 = threading.Thread(target=MissionComputer().get_mission_computer_load)
-    thread3 = threading.Thread(target=MissionComputer().get_sensor_data)
-
-    thread1.start()
-    thread2.start()
-    thread3.start()
-
-    # 멀티 프로세스 실행 예시
-    process1 = multiprocessing.Process(target=run_info)
-    process2 = multiprocessing.Process(target=run_load)
-    process3 = multiprocessing.Process(target=run_sensor)
-
-    process1.start()
-    process2.start()
-    process3.start()
+    main()
